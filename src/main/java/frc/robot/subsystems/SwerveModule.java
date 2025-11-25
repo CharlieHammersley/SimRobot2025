@@ -71,7 +71,7 @@ public class SwerveModule {
         double angle = absoluteEncoder.getVoltage() / RobotController.getVoltage5v();
         angle *= 2.0 * Math.PI;
         angle -= absoluteEncoderOffsetRad;
-        return angle * (absoluteEncoderReversed ? -1.0 : 1.0)    
+        return angle * (absoluteEncoderReversed ? -1.0 : 1.0);
     }
 
     public void resetEncoders() { // sets drive encoder to 0 and the turning encoder to its absolute posiiton
