@@ -12,7 +12,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.ModuleConstants;
 
-public class SweveModule {
+public class SwerveModule {
     private final CANSparkMax driveMotor;
     private final CANSparkMax turningMotor;
 
@@ -97,7 +97,7 @@ public class SweveModule {
 
         SmartDashboard.putString("Swerve[" + absoluteEncoder.getChannel() + "] state", state.toString()); // debug info
     }
-    
+
 
     public void stop() {
         driveMotor.set(0);
