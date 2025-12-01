@@ -4,13 +4,16 @@
 
 package frc.robot;
 
-import frc.robot.Constants.OperatorConstants;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants.OIConstants;
 import frc.robot.commands.Autos;
-import frc.robot.commands.ExampleCommand;
-import frc.robot.subsystems.ExampleSubsystem;
+import frc.robot.subsystems.SwerveSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -22,7 +25,7 @@ public class RobotContainer {
 
   private final SwerveSubsystem swerveSubsystem = new SwerveSubsystem();
 
-  private final Joysick driverJoystick = new Joysick(OIConstants.kDriverControllerPort);
+  private final Joystick driverJoystick = new Joystick(OIConstants.kDriverControllerPort);
 
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
@@ -49,7 +52,7 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-    new JoystickButton(driverJoystick, 2).whenPressed(() -> swerveSubsystem.zeroHeading());
+    new JoystickButton(driverJoystick, 2).whenPressed(Commands.runOnce(() -> swerveSubsystem.zeroHeading(), swerveSubsystem));
 
   }
 

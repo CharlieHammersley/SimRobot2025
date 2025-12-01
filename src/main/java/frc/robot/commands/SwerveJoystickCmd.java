@@ -1,18 +1,28 @@
 package frc.robot.commands;
 
-import edu.wpi.first.wpilibj.command.CommandBase;
+import java.util.function.Supplier;
+
+import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.wpilibj2.command.Command;
+//import edu.wpi.first.wpilibj2.command.CommandBase;
+import frc.robot.Constants.DriveConstants;
+import frc.robot.Constants.OIConstants;
+import frc.robot.subsystems.SwerveSubsystem;
 
 
-public class SwerveJoystickCmd extends CommandBase{
+
+public class SwerveJoystickCmd extends Command {
     
     private final SwerveSubsystem swerveSubsystem;
-    private final Supplier<double> xSpdFunction, ySpdFunction, turningSpdFunction;
-    private final Supplier<boolean> feildOrientatedFunction;
+    private final Supplier<Double> xSpdFunction, ySpdFunction, turningSpdFunction;
+    private final Supplier<Boolean> feildOrientatedFunction;
     private final SlewRateLimiter xLimiter, yLimiter, turningLimiter;
 
     public SwerveJoystickCmd(SwerveSubsystem swerveSubsystem, // gets the joystick values in terms of Suppliers and a boolean for if the user wants the robot to drive feild relative or not
-            Supplier<Double> xSpdFunction, Supplier<Double> ySpdFunction, Supplier<double> turningSpdFunction,
-            Supplier<boolean> feildOrientatedFunction) {
+            Supplier<Double> xSpdFunction, Supplier<Double> ySpdFunction, Supplier<Double> turningSpdFunction,
+            Supplier<Boolean> feildOrientatedFunction) {
         this.swerveSubsystem = swerveSubsystem;
         this.xSpdFunction = xSpdFunction;
         this.ySpdFunction = ySpdFunction;
@@ -20,16 +30,14 @@ public class SwerveJoystickCmd extends CommandBase{
         this.feildOrientatedFunction = feildOrientatedFunction;
         this.xLimiter = new SlewRateLimiter(DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond);
         this.yLimiter = new SlewRateLimiter(DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond);
-        this.tunringLimiter = new SlewRateLimiter(DriveConstants.kTeleDriveMaxAngularAccelerationUnitsPerSecond);
+        this.turningLimiter = new SlewRateLimiter(DriveConstants.kTeleDriveMaxAngularAccelerationUnitsPerSecond);
         addRequirements(swerveSubsystem);
     }
 
-    @Override
     public void initialize() {
-
+        
     }
 
-    @Override
     public void execute() {
         // get realtime joystick inputs
         double xSpeed = xSpdFunction.get();
@@ -39,7 +47,7 @@ public class SwerveJoystickCmd extends CommandBase{
         // apply deadband -- if the joystick doesn't center back to eactly zero we will ignore any small inputs
         xSpeed = Math.abs(xSpeed) > OIConstants.kDeadband ? xSpeed : 0.0;
         ySpeed = Math.abs(ySpeed) > OIConstants.kDeadband ? ySpeed : 0.0;
-        turningSpeed = Math.abs(turningSpeed) > OIConstants.kDeadband ? tunringSpeed : 0.0;
+        turningSpeed = Math.abs(turningSpeed) > OIConstants.kDeadband ? turningSpeed : 0.0;
 
         // rate limiter - limits joysick input from being too violent -- limit accelleration to ensure smooth driving
         xSpeed = xLimiter.calculate(xSpeed) * DriveConstants.kTeleDriveMaxSpeedMetersPerSecond;
@@ -49,7 +57,11 @@ public class SwerveJoystickCmd extends CommandBase{
         // construct desired chassis speeds
         ChassisSpeeds chassisSpeeds;
         if(feildOrientatedFunction.get()) {
-            chassisSpeeds = ChassisSpeeds.fromFeildRelativeSpeeds(xSpeed, ySpeed, turningSpeed, swerveSubsystem.getRotation2d());
+            chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(
+                xSpeed, 
+                ySpeed, 
+                turningSpeed, 
+                swerveSubsystem.getRotation2d());
         } else {
             chassisSpeeds = new ChassisSpeeds(xSpeed, ySpeed, turningSpeed);
         }
