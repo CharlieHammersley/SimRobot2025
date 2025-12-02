@@ -47,14 +47,37 @@ public class SwerveSubsystem extends SubsystemBase{
 
     private final Pigeon2 gyro = new Pigeon2(DriveConstants.kPigeonCanID); // navx gyro
 
-    public SwerveSubsystem() { // kindof unsure about this but it should make sure the robot resets the heading even if its doing other things on startup
-        new Thread(() -> {
-            try {
-                Thread.sleep(1000);
-                zeroHeading();
-            } catch (Exception e) {
-            }
-        }).start();
+    public SwerveSubsystem() {
+        gyro.reset();
+    }
+
+    @Override
+    public void simulationPeriodic() {
+        frontLeft.simulationUpdate();
+        frontRight.simulationUpdate();
+        backLeft.simulationUpdate();
+        backRight.simulationUpdate();
+
+        // Gyro Caclulations
+        var frontLeftState  = frontLeft.getState();
+        var frontRightState = frontRight.getState();
+        var backLeftState   = backLeft.getState();
+        var backRightState  = backRight.getState();
+
+        var chassisSpeeds = DriveConstants.kDriveKinematics.toChassisSpeeds(
+            frontLeftState,
+            frontRightState,
+            backLeftState,
+            backRightState
+        );
+
+        double dt = 0.02;
+        double deltaYawDeg = Math.toDegrees(chassisSpeeds.omegaRadiansPerSecond * dt);
+
+        var sim = gyro.getSimState();
+        sim.addYaw(deltaYawDeg);
+
+        SmartDashboard.putNumber("Sim Gyro Heading", getHeading());
     }
 
     public void zeroHeading() { // sets the zero heading to wherever the robot was facing when it was booted up
@@ -62,17 +85,25 @@ public class SwerveSubsystem extends SubsystemBase{
     }
 
     public double getHeading() {
-        return Math.IEEEremainder(gyro.getAngle(), 360);
+        return Rotation2d.fromDegrees(gyro.getYaw().getValueAsDouble()).getDegrees();
+        //return Math.IEEEremainder(gyro.getYaw().getValueAsDouble(),360.0);
     }
 
     public Rotation2d getRotation2d() {
-        //return Rotation2d.fromDegrees(getHeading());
-        return gyro.getRotation2d().times(-1);
+        return Rotation2d.fromDegrees(getHeading());
     }
 
     @Override
     public void periodic() {
-        SmartDashboard.putNumber("Robot Heading: ", getHeading());
+        // Gyro info
+        SmartDashboard.putNumber("Robot Heading (deg)", getHeading());
+        SmartDashboard.putNumber("Gyro Rotation2d (deg)", getRotation2d().getDegrees());
+
+        // Module info
+        frontLeft.updateDashboard("FL");
+        frontRight.updateDashboard("FR");
+        backLeft.updateDashboard("BL");
+        backRight.updateDashboard("BR");
     }
 
     public void stopModules() {

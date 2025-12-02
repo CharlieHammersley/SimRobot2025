@@ -4,24 +4,19 @@
 
 package frc.robot;
 
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
+//import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.OIConstants;
-import frc.robot.commands.Autos;
+//import frc.robot.commands.Autos;
 import frc.robot.subsystems.SwerveSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
+//import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+//import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.commands.SwerveJoystickCmd;
 
-/**
- * This class is where the bulk of the robot should be declared. Since Command-based is a
- * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
- * periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
- * subsystems, commands, and trigger mappings) should be declared here.
- */
 public class RobotContainer {
 
   private final SwerveSubsystem swerveSubsystem = new SwerveSubsystem();
@@ -29,40 +24,50 @@ public class RobotContainer {
   private final Joystick driverJoystick = new Joystick(OIConstants.kDriverControllerPort);
 
 
-  /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
-    swerveSubsystem.setDefaultCommand(new SwerveJoystickCmd(
+    SmartDashboard.putBoolean("W", false);
+    SmartDashboard.putBoolean("A", false);
+    SmartDashboard.putBoolean("S", false);
+    SmartDashboard.putBoolean("D", false);
+    SmartDashboard.putBoolean("Q", false);  // turn left
+    SmartDashboard.putBoolean("E", false);  // turn right
+
+    new SwerveJoystickCmd(
+        swerveSubsystem,
+        
+        // X (forward/back)
+        () -> SmartDashboard.getBoolean("W", false) ? 1.0 :
+              SmartDashboard.getBoolean("S", false) ? -1.0 : 0.0,
+
+        // Y (strafe left/right)
+        () -> SmartDashboard.getBoolean("D", false) ? 1.0 :
+              SmartDashboard.getBoolean("A", false) ? -1.0 : 0.0,
+
+        // Turning (Q = left, E = right)
+        () -> SmartDashboard.getBoolean("Q", false) ? -1.0 : 
+              SmartDashboard.getBoolean("E", false) ?  1.0 : 0.0,
+
+        // Always field-oriented for now
+        () -> true
+    );
+
+    /*swerveSubsystem.setDefaultCommand(new SwerveJoystickCmd(
       swerveSubsystem,
       () -> -driverJoystick.getRawAxis(OIConstants.kDriverYAxis),
       () -> driverJoystick.getRawAxis(OIConstants.kDriverXAxis),
       () -> driverJoystick.getRawAxis(OIConstants.kDriverRotAxis),
       () -> !driverJoystick.getRawButton(OIConstants.kDriverFieldOrientedButtonIdx)
       
-    ));
+    ));*/
     // Configure the trigger bindings
     configureBindings();
   }
-
-  /**
-   * Use this method to define your trigger->command mappings. Triggers can be created via the
-   * {@link Trigger#Trigger(java.util.function.BooleanSupplier)} constructor with an arbitrary
-   * predicate, or via the named factories in {@link
-   * edu.wpi.first.wpilibj2.command.button.CommandGenericHID}'s subclasses for {@link
-   * CommandXboxController Xbox}/{@link edu.wpi.first.wpilibj2.command.button.CommandPS4Controller
-   * PS4} controllers or {@link edu.wpi.first.wpilibj2.command.button.CommandJoystick Flight
-   * joysticks}.
-   */
   
   private void configureBindings() {
     JoystickButton zeroHeadingButton = new JoystickButton(driverJoystick, 2);
     zeroHeadingButton.onTrue(Commands.runOnce(() -> swerveSubsystem.zeroHeading(), swerveSubsystem));
   }
 
-  /**
-   * Use this to pass the autonomous command to the main {@link Robot} class.
-   *
-   * @return the command to run in autonomous
-   */
   public Command getAutonomousCommand() {
     return null;
   }
