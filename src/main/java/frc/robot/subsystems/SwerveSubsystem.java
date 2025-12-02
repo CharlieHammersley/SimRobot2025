@@ -1,6 +1,13 @@
 package frc.robot.subsystems;
+import com.ctre.phoenix6.hardware.Pigeon2;
+
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants.DriveConstants;
+
 public class SwerveSubsystem extends SubsystemBase{
     private final SwerveModule frontLeft = new SwerveModule(
             DriveConstants.kFrontLeftDriveMotorPort, // drive motor port
@@ -38,14 +45,14 @@ public class SwerveSubsystem extends SubsystemBase{
             DriveConstants.kBackRightDriveAbsoluteEncoderOffsetRad,
             DriveConstants.kBackRightDriveAbsoluteEncoderReversed);
 
-    private final AHRS gyro = new AHRS(SPI.Port.kMXP); // navx gyro
+    private final Pigeon2 gyro = new Pigeon2(DriveConstants.kPigeonCanID); // navx gyro
 
     public SwerveSubsystem() { // kindof unsure about this but it should make sure the robot resets the heading even if its doing other things on startup
         new Thread(() -> {
             try {
                 Thread.sleep(1000);
                 zeroHeading();
-            } catch (Exeption e) {
+            } catch (Exception e) {
             }
         }).start();
     }
@@ -59,7 +66,8 @@ public class SwerveSubsystem extends SubsystemBase{
     }
 
     public Rotation2d getRotation2d() {
-        return Rotation2d.fromDegrees(getHeading());
+        //return Rotation2d.fromDegrees(getHeading());
+        return gyro.getRotation2d().times(-1);
     }
 
     @Override
@@ -74,8 +82,8 @@ public class SwerveSubsystem extends SubsystemBase{
         backRight.stop();
     }
 
-    public void setModuleStates(SwerveModuleStates[] desiredStates) {
-        SwerveDriveKinematics.normalizeWheelSpeeds(desiredStates, DriveConstants.kPhysicalMaxSpeedMetersPerSecond);
+    public void setModuleStates(SwerveModuleState[] desiredStates) {
+        SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, DriveConstants.kPhysicalMaxSpeedMetersPerSecond);
         frontLeft.setDesiredState(desiredStates[0]);
         frontRight.setDesiredState(desiredStates[1]);
         backLeft.setDesiredState(desiredStates[2]);

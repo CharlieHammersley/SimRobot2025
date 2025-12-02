@@ -9,6 +9,7 @@ public final class Constants {
 
     public static final class ModuleConstants {
         public static final double kWheelDiameterMeters = Units.inchesToMeters(4);
+        public static final double kWheelCircumferenceMeters = kWheelDiameterMeters * 2 * Math.PI;
         public static final double kDriveMotorGearRatio = 1 / 5.8462;
         public static final double kTurningMotorGearRatio = 1 / 18.0;
         public static final double kDriveEncoderRot2Meter = kDriveMotorGearRatio * Math.PI * kWheelDiameterMeters;
@@ -19,6 +20,7 @@ public final class Constants {
     }
 
     public static final class DriveConstants {
+        public static final int kPigeonCanID = 2;
 
         public static final double kTrackWidth = Units.inchesToMeters(21);
         // Distance between right and left wheels

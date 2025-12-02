@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import frc.robot.commands.SwerveJoystickCmd;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -35,7 +36,7 @@ public class RobotContainer {
       () -> -driverJoystick.getRawAxis(OIConstants.kDriverYAxis),
       () -> driverJoystick.getRawAxis(OIConstants.kDriverXAxis),
       () -> driverJoystick.getRawAxis(OIConstants.kDriverRotAxis),
-      () -> !driverJoystick.getRawButton(OIConstants.kDriverFieldOrientedButtonIdx),
+      () -> !driverJoystick.getRawButton(OIConstants.kDriverFieldOrientedButtonIdx)
       
     ));
     // Configure the trigger bindings
@@ -51,9 +52,10 @@ public class RobotContainer {
    * PS4} controllers or {@link edu.wpi.first.wpilibj2.command.button.CommandJoystick Flight
    * joysticks}.
    */
+  
   private void configureBindings() {
-    new JoystickButton(driverJoystick, 2).whenPressed(Commands.runOnce(() -> swerveSubsystem.zeroHeading(), swerveSubsystem));
-
+    JoystickButton zeroHeadingButton = new JoystickButton(driverJoystick, 2);
+    zeroHeadingButton.onTrue(Commands.runOnce(() -> swerveSubsystem.zeroHeading(), swerveSubsystem));
   }
 
   /**
