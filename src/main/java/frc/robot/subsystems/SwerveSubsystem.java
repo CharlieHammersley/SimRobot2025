@@ -3,12 +3,22 @@ import com.ctre.phoenix6.hardware.Pigeon2;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
 
+
 public class SwerveSubsystem extends SubsystemBase{
+
+    private final Field2d field = new Field2d();
+    private final ShuffleboardTab driveTab = Shuffleboard.getTab("Drive");
+
     private final SwerveModule frontLeft = new SwerveModule(
             DriveConstants.kFrontLeftDriveMotorPort, // drive motor port
             DriveConstants.kFrontLeftTurningMotorPort, // turning motor port
@@ -47,9 +57,23 @@ public class SwerveSubsystem extends SubsystemBase{
 
     private final Pigeon2 gyro = new Pigeon2(DriveConstants.kPigeonCanID); // navx gyro
 
+    private final SwerveDriveOdometry odometry = new SwerveDriveOdometry(
+        DriveConstants.kDriveKinematics,
+        getRotation2d(),
+        new SwerveModulePosition[] {
+            new SwerveModulePosition(frontLeft.getDriveDistanceMeters(), frontLeft.getTurningRotation2d()),
+            new SwerveModulePosition(frontRight.getDriveDistanceMeters(), frontRight.getTurningRotation2d()),
+            new SwerveModulePosition(backLeft.getDriveDistanceMeters(), backLeft.getTurningRotation2d()),
+            new SwerveModulePosition(backRight.getDriveDistanceMeters(), backRight.getTurningRotation2d())
+        });
+
     public SwerveSubsystem() {
         gyro.reset();
+        driveTab.add("Field", field).withSize(6, 4).withPosition(0, 0);
+
+        SmartDashboard.putData("Field", field);
     }
+
 
     @Override
     public void simulationPeriodic() {
@@ -58,24 +82,16 @@ public class SwerveSubsystem extends SubsystemBase{
         backLeft.simulationUpdate();
         backRight.simulationUpdate();
 
-        // Gyro Caclulations
-        var frontLeftState  = frontLeft.getState();
-        var frontRightState = frontRight.getState();
-        var backLeftState   = backLeft.getState();
-        var backRightState  = backRight.getState();
-
         var chassisSpeeds = DriveConstants.kDriveKinematics.toChassisSpeeds(
-            frontLeftState,
-            frontRightState,
-            backLeftState,
-            backRightState
+            frontLeft.getState(),
+            frontRight.getState(),
+            backLeft.getState(),
+            backRight.getState()
         );
 
         double dt = 0.02;
         double deltaYawDeg = Math.toDegrees(chassisSpeeds.omegaRadiansPerSecond * dt);
-
-        var sim = gyro.getSimState();
-        sim.addYaw(deltaYawDeg);
+        gyro.getSimState().addYaw(deltaYawDeg);
 
         SmartDashboard.putNumber("Sim Gyro Heading", getHeading());
     }
@@ -95,15 +111,18 @@ public class SwerveSubsystem extends SubsystemBase{
 
     @Override
     public void periodic() {
-        // Gyro info
-        SmartDashboard.putNumber("Robot Heading (deg)", getHeading());
-        SmartDashboard.putNumber("Gyro Rotation2d (deg)", getRotation2d().getDegrees());
+        odometry.update(
+            getRotation2d(),
+            new SwerveModulePosition[] {
+                new SwerveModulePosition(frontLeft.getDriveDistanceMeters(), frontLeft.getTurningRotation2d()),
+                new SwerveModulePosition(frontRight.getDriveDistanceMeters(), frontRight.getTurningRotation2d()),
+                new SwerveModulePosition(backLeft.getDriveDistanceMeters(), backLeft.getTurningRotation2d()),
+                new SwerveModulePosition(backRight.getDriveDistanceMeters(), backRight.getTurningRotation2d())
+            });
 
-        // Module info
-        frontLeft.updateDashboard("FL");
-        frontRight.updateDashboard("FR");
-        backLeft.updateDashboard("BL");
-        backRight.updateDashboard("BR");
+        field.setRobotPose(odometry.getPoseMeters());
+
+        SmartDashboard.putNumber("Heading Debug", getHeading());
     }
 
     public void stopModules() {

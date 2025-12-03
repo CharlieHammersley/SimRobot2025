@@ -85,6 +85,15 @@ public class SwerveModule {
 
         resetEncoders();
     }
+    
+
+    public double getDriveDistanceMeters() {
+        return driveMotor.getPosition().getValueAsDouble();
+    }
+    
+    public Rotation2d getTurningRotation2d() {
+        return Rotation2d.fromRadians(turningMotor.getPosition().getValueAsDouble());
+    }
 
     public double getDrivePosition() {
         return driveMotor.getPosition().getValueAsDouble();
