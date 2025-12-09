@@ -12,9 +12,10 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+//import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.ModuleConstants;
+//import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Robot;
 
 
@@ -145,8 +146,6 @@ public class SwerveModule {
         // sets both motors to the calculated values
         driveMotor.set(state.speedMetersPerSecond / DriveConstants.kPhysicalMaxSpeedMetersPerSecond);
         turningMotor.set(turningPidController.calculate(getTurningPosition(), state.angle.getRadians()));
-
-        //SmartDashboard.putString("Swerve[" + absoluteEncoder.getChannel() + "] state", state.toString()); // debug info
     }
 
 
@@ -182,56 +181,7 @@ public class SwerveModule {
 
         turnSim.setRotorVelocity(turnRPS);
         turnSim.addRotorPosition(turnRPS * dt);
-    }
 
-    // basic update dashboard Shuffleboard.getTab("Drive").add();
-    public void updateDashboard(String name) {
-        Shuffleboard.getTab("Drive").add(" Drive Position (m)", getDrivePosition());
-        Shuffleboard.getTab("Drive").add(" Drive Velocity (m/2)", getDriveVelocity());
-
-        Shuffleboard.getTab("Drive").add(" Turn Position (rad)", getTurningPosition());
-
-        Shuffleboard.getTab("Drive").add(" Turn Velocity (rad/s)", getTurningVelocity());
-
-        Shuffleboard.getTab("Drive").add(" Absolute Encoder (rad)", getAbsoluteEncoderRad());
-        
-        Shuffleboard.getTab("Drive").add(" Drive DutyCycle", driveMotor.getDutyCycle().getValueAsDouble());
-
-        Shuffleboard.getTab("Drive").add(" Turn DutyCycle", turningMotor.getDutyCycle().getValueAsDouble());
-
-        Shuffleboard.getTab("Drive").add(" Rotor Pos (drive)", driveMotor.getRotorPosition().getValueAsDouble());
-
-        Shuffleboard.getTab("Drive").add(" Rotor Vel (drive)", driveMotor.getRotorVelocity().getValueAsDouble());
-
-        Shuffleboard.getTab("Drive").add(" Rotor Pos (turn)", turningMotor.getRotorPosition().getValueAsDouble());
-        Shuffleboard.getTab("Drive").add(" Rotor Vel (turn)", turningMotor.getRotorVelocity().getValueAsDouble());
-
-
-
-        /*SmartDashboard.putNumber(name + " Drive Position (m)", getDrivePosition());
-        SmartDashboard.putNumber(name + " Drive Velocity (m/s)", getDriveVelocity());
-    
-        SmartDashboard.putNumber(name + " Turn Position (rad)", getTurningPosition());
-        SmartDashboard.putNumber(name + " Turn Velocity (rad/s)", getTurningVelocity());
-    
-        SmartDashboard.putNumber(name + " Absolute Encoder (rad)", getAbsoluteEncoderRad());
-    
-        SmartDashboard.putNumber(name + " Drive DutyCycle", 
-            driveMotor.getDutyCycle().getValueAsDouble());
-    
-        SmartDashboard.putNumber(name + " Turn DutyCycle", 
-            turningMotor.getDutyCycle().getValueAsDouble());
-    
-        SmartDashboard.putNumber(name + " Rotor Pos (drive)", 
-            driveMotor.getRotorPosition().getValueAsDouble());
-        SmartDashboard.putNumber(name + " Rotor Vel (drive)", 
-            driveMotor.getRotorVelocity().getValueAsDouble());
-    
-        SmartDashboard.putNumber(name + " Rotor Pos (turn)", 
-            turningMotor.getRotorPosition().getValueAsDouble());
-        SmartDashboard.putNumber(name + " Rotor Vel (turn)", 
-            turningMotor.getRotorVelocity().getValueAsDouble());
-            */
     }
     
 }
