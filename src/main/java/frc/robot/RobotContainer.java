@@ -17,6 +17,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 //import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 //import edu.wpi.first.wpilibj2.command.button.Trigger;
+import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
@@ -33,20 +34,30 @@ public class RobotContainer {
     configureBindings();
     swerveSubsystem.setDefaultCommand(
       new RunCommand(() -> {
-          double xSpeed = -driverJoystick.getRawAxis(1) * 2.5; // Forward/back
-          double ySpeed = -driverJoystick.getRawAxis(0) * 2.5; // Strafe
-          double rot    = -driverJoystick.getRawAxis(2) * 2.0; // Rotation (wheel or trigger)
+      double xSpeed = applyDeadband(-driverJoystick.getRawAxis(1), 0.05) * 20; // Forward/back
+      double ySpeed = applyDeadband(-driverJoystick.getRawAxis(0), 0.05) * 20; // Strafe
+      double rot = applyDeadband(-driverJoystick.getRawAxis(2), 0.05) * 10.0; // Rotation
+    
+    
+    ChassisSpeeds speeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot,swerveSubsystem.getRotation2d());
+    
+    var states = DriveConstants.kDriveKinematics.toSwerveModuleStates(speeds);
+    SwerveDriveKinematics.desaturateWheelSpeeds(states, DriveConstants.kPhysicalMaxSpeedMetersPerSecond);
+    
+    
+    swerveSubsystem.setModuleStates(states);
+    }, swerveSubsystem));
+    }
 
-          var states = DriveConstants.kDriveKinematics.toSwerveModuleStates(
-              new ChassisSpeeds(xSpeed, ySpeed, rot)
-          );
-          swerveSubsystem.setModuleStates(states);
-      }, swerveSubsystem));
+  private static double applyDeadband(double value, double deadband) {
+    return (Math.abs(value) < deadband) ? 0 : value;
   }
+
   
   private void configureBindings() {
     JoystickButton zeroHeadingButton = new JoystickButton(driverJoystick, 2);
     zeroHeadingButton.onTrue(Commands.runOnce(() -> swerveSubsystem.zeroHeading(), swerveSubsystem));
+    
     new JoystickButton(driverJoystick, 1)
       .onTrue(Commands.runOnce(() ->
         swerveSubsystem.resetOdometry(new Pose2d(2.0, 4.0, new Rotation2d()))

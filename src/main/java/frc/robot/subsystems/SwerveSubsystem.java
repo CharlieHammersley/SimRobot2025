@@ -7,8 +7,6 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
-import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -61,13 +59,7 @@ public class SwerveSubsystem extends SubsystemBase{
 
     private final SwerveDriveOdometry odometry = new SwerveDriveOdometry(
         DriveConstants.kDriveKinematics,
-        getRotation2d(),
-        new SwerveModulePosition[] {
-            new SwerveModulePosition(frontLeft.getDriveDistanceMeters(), frontLeft.getTurningRotation2d()),
-            new SwerveModulePosition(frontRight.getDriveDistanceMeters(), frontRight.getTurningRotation2d()),
-            new SwerveModulePosition(backLeft.getDriveDistanceMeters(), backLeft.getTurningRotation2d()),
-            new SwerveModulePosition(backRight.getDriveDistanceMeters(), backRight.getTurningRotation2d())
-        });
+        getRotation2d(), getModulePositions());
 
     public Pose2d getPose() {
         return odometry.getPoseMeters();
@@ -86,21 +78,25 @@ public class SwerveSubsystem extends SubsystemBase{
         gyro.reset();
 
         SmartDashboard.putData("Field", field);
-        SmartDashboard.putData("Swerve States", new Sendable() {
+        SmartDashboard.putData("Swerve Drive", new Sendable() {
             @Override
             public void initSendable(SendableBuilder builder) {
-                builder.setSmartDashboardType("SwerveDrive");
-                builder.addDoubleArrayProperty("States",
-                    () -> new double[]{
-                        frontLeft.getState().speedMetersPerSecond, frontLeft.getState().angle.getRadians(),
-                        frontRight.getState().speedMetersPerSecond, frontRight.getState().angle.getRadians(),
-                        backLeft.getState().speedMetersPerSecond, backLeft.getState().angle.getRadians(),
-                        backRight.getState().speedMetersPerSecond, backRight.getState().angle.getRadians()
-                    },
-                    null
-                );
-            }
-        });
+              builder.setSmartDashboardType("SwerveDrive");
+          
+              builder.addDoubleProperty("Front Left Angle",() -> frontLeft.getState().angle.getRadians(),null);
+              builder.addDoubleProperty("Front Left Velocity",() -> frontLeft.getState().speedMetersPerSecond,null);
+          
+              builder.addDoubleProperty("Front Right Angle",() -> frontRight.getState().angle.getRadians(),null);
+              builder.addDoubleProperty("Front Right Velocity",() -> frontRight.getState().speedMetersPerSecond,null);
+          
+              builder.addDoubleProperty("Back Left Angle",() -> backLeft.getState().angle.getRadians(),null);
+              builder.addDoubleProperty("Back Left Velocity",() -> backLeft.getState().speedMetersPerSecond,null);
+          
+              builder.addDoubleProperty("Back Right Angle",() -> backRight.getState().angle.getRadians(),null);
+              builder.addDoubleProperty("Back Right Velocity",() -> backRight.getState().speedMetersPerSecond,null);
+          
+              builder.addDoubleProperty("Robot Angle",() -> getRotation2d().getRadians(),null);
+            }});
     }
 
 
@@ -118,8 +114,7 @@ public class SwerveSubsystem extends SubsystemBase{
             backRight.getState()
         );
 
-        double dt = 0.02;
-        double deltaYawDeg = Math.toDegrees(chassisSpeeds.omegaRadiansPerSecond * dt);
+        double deltaYawDeg = Math.toDegrees(chassisSpeeds.omegaRadiansPerSecond * 0.02);
         gyro.getSimState().addYaw(deltaYawDeg);
     }
 
@@ -129,7 +124,6 @@ public class SwerveSubsystem extends SubsystemBase{
 
     public double getHeading() {
         return Rotation2d.fromDegrees(gyro.getYaw().getValueAsDouble()).getDegrees();
-        //return Math.IEEEremainder(gyro.getYaw().getValueAsDouble(),360.0);
     }
 
     public Rotation2d getRotation2d() {
@@ -137,11 +131,7 @@ public class SwerveSubsystem extends SubsystemBase{
     }
 
     public void resetOdometry(Pose2d pose) {
-        odometry.resetPosition(
-            getRotation2d(),
-            getModulePositions(),
-            pose
-        );
+        odometry.resetPosition(getRotation2d(), getModulePositions(), pose);
     }
     
     public void resetToCenter() {
@@ -155,27 +145,11 @@ public class SwerveSubsystem extends SubsystemBase{
         odometry.update(getRotation2d(), getModulePositions());
         field.setRobotPose(odometry.getPoseMeters());
 
-        //field.setRobotPose(getPose());
-
         SmartDashboard.putNumber("Robot Velocity (m/s)",DriveConstants.kDriveKinematics.toChassisSpeeds(
             frontLeft.getState(),
             frontRight.getState(),
             backLeft.getState(),
             backRight.getState()).vxMetersPerSecond);
-
-        /*odometry.update(
-            getRotation2d(),
-            new SwerveModulePosition[] {
-                new SwerveModulePosition(frontLeft.getDriveDistanceMeters(), frontLeft.getTurningRotation2d()),
-                new SwerveModulePosition(frontRight.getDriveDistanceMeters(), frontRight.getTurningRotation2d()),
-                new SwerveModulePosition(backLeft.getDriveDistanceMeters(), backLeft.getTurningRotation2d()),
-                new SwerveModulePosition(backRight.getDriveDistanceMeters(), backRight.getTurningRotation2d())
-            });
-
-        field.setRobotPose(odometry.getPoseMeters());
-
-        SmartDashboard.putNumber("Heading Debug", getHeading());
-        field.setRobotPose(odometry.getPoseMeters());*/
     }
 
     public void stopModules() {

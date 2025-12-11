@@ -7,6 +7,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.sim.TalonFXSimState;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
@@ -93,29 +94,34 @@ public class SwerveModule {
     }
     
     public Rotation2d getTurningRotation2d() {
-        return Rotation2d.fromRadians(turningMotor.getPosition().getValueAsDouble());
-    }
+        return Rotation2d.fromRadians(getAbsoluteEncoderRad());
+    }    
 
     public double getDrivePosition() {
-        return driveMotor.getPosition().getValueAsDouble();
+        //return driveMotor.getPosition().getValueAsDouble();
+        return MathUtil.angleModulus(driveMotor.getPosition().getValueAsDouble());
     }
 
     public double getTurningPosition() {
-        return turningMotor.getPosition().getValueAsDouble();
+        return MathUtil.angleModulus(turningMotor.getPosition().getValueAsDouble());
     }
 
     public double getDriveVelocity() {
-        return driveMotor.getVelocity().getValueAsDouble();
+        //return driveMotor.getVelocity().getValueAsDouble();
+        return MathUtil.angleModulus(driveMotor.getVelocity().getValueAsDouble());
     }
 
     public double getTurningVelocity() {
-        return turningMotor.getVelocity().getValueAsDouble();
+        //return turningMotor.getVelocity().getValueAsDouble();
+        return MathUtil.angleModulus(turningMotor.getVelocity().getValueAsDouble());
+
     }
 
     public double getAbsoluteEncoderRad() {
     
         if (Robot.isSimulation()) {
-            return turningMotor.getPosition().getValueAsDouble(); // fake it
+            double mechAngle = turningMotor.getPosition().getValueAsDouble();
+            return MathUtil.angleModulus(mechAngle);
         }
         
         double angle = absoluteEncoder.getVoltage() / RobotController.getVoltage5V();
@@ -131,23 +137,24 @@ public class SwerveModule {
     
 
     public SwerveModuleState getState() {
-        return new SwerveModuleState(getDriveVelocity(), new Rotation2d(getTurningPosition()));
+        return new SwerveModuleState(getDriveVelocity(), getTurningRotation2d());
+    }    
+
+    public void setDesiredState(SwerveModuleState desiredState) {
+        desiredState = SwerveModuleState.optimize(desiredState, getState().angle);
+
+        double percentOutput = desiredState.speedMetersPerSecond / DriveConstants.kPhysicalMaxSpeedMetersPerSecond;
+        driveMotor.set(percentOutput);
+    
+        // Use absolute encoder for angle feedback
+        double currentAngle = getAbsoluteEncoderRad();
+        double targetAngle = desiredState.angle.getRadians();
+        double turnOutput =
+                turningPidController.calculate(currentAngle, targetAngle);
+    
+        turningMotor.set(turnOutput);
     }
-
-    public void setDesiredState(SwerveModuleState state) {
-        if (Math.abs(state.speedMetersPerSecond) < 0.001) { // stops module from reseting 
-            stop();
-            return;
-        }
-
-        // optimize so module never has to turn more than 90 degrees
-        state.optimize(getState().angle);
-
-        // sets both motors to the calculated values
-        driveMotor.set(state.speedMetersPerSecond / DriveConstants.kPhysicalMaxSpeedMetersPerSecond);
-        turningMotor.set(turningPidController.calculate(getTurningPosition(), state.angle.getRadians()));
-    }
-
+    
 
     public void stop() {
         driveMotor.set(0);
@@ -173,7 +180,7 @@ public class SwerveModule {
         driveSim.addRotorPosition(motorRPS * dt);
 
         double turnDuty = turningMotor.getDutyCycle().getValueAsDouble();
-        double turnSpeedRad = turnDuty * 10.0; // fake speed, change
+        double turnSpeedRad = turnDuty * Math.PI * 4;
 
         //double newPos = turnSim.getRotorPosition() + turnSpeedRad * dt;
 
