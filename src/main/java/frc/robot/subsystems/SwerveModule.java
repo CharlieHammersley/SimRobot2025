@@ -1,194 +1,194 @@
 package frc.robot.subsystems;
 
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
-//import com.ctre.phoenix6.controls.DutyCycleOut;
-import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.sim.TalonFXSimState;
+import com.ctre.phoenix6.signals.InvertedValue;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.RobotController;
-//import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.AnalogInput;
+
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.ModuleConstants;
-//import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Robot;
-
 
 public class SwerveModule {
     private final TalonFX driveMotor;
     private final TalonFX turningMotor;
 
-    private TalonFXSimState driveSim;
-    private TalonFXSimState turnSim;
-    
-    
-
-    //private final CANcoder driveEncoder;
-    //private final CANcoder turningEncoder;
-
-    private final PIDController turningPidController;
+    private final TalonFXSimState driveSim;
+    private final TalonFXSimState turnSim;
 
     private final AnalogInput absoluteEncoder;
     private final boolean absoluteEncoderReversed;
     private final double absoluteEncoderOffsetRad;
 
+    private final PIDController turningPid;
+
     private final PositionVoltage drivePosControl = new PositionVoltage(0);
     private final PositionVoltage turnPosControl = new PositionVoltage(0);
-    //private final DutyCycleOut driveOut = new DutyCycleOut(0.0);
-    //private final DutyCycleOut turnOut = new DutyCycleOut(0.0);
 
-    public SwerveModule(int driveMotorId, int turningMotorId, boolean driveMotorReversed, boolean turningMotorReversed, int absoluteEncoderId, double absoluteEncoderOffset, boolean absoluteEncoderReversed) {
-        
+    public SwerveModule(int driveMotorId,
+                        int turningMotorId,
+                        boolean driveMotorReversed,
+                        boolean turningMotorReversed,
+                        int absoluteEncoderPort,
+                        double absoluteEncoderOffset,
+                        boolean absoluteEncoderReversed) {
+
         this.absoluteEncoderOffsetRad = absoluteEncoderOffset;
         this.absoluteEncoderReversed = absoluteEncoderReversed;
-        absoluteEncoder = new AnalogInput(absoluteEncoderId);
+        this.absoluteEncoder = (absoluteEncoderPort >= 0) ? new AnalogInput(absoluteEncoderPort) : null;
 
         driveMotor = new TalonFX(driveMotorId);
         turningMotor = new TalonFX(turningMotorId);
 
+        driveMotor.getConfigurator().apply(new com.ctre.phoenix6.configs.TalonFXConfiguration() {{
+            MotorOutput.Inverted = driveMotorReversed ? InvertedValue.Clockwise_Positive : InvertedValue.CounterClockwise_Positive;
+        }});
+        turningMotor.getConfigurator().apply(new com.ctre.phoenix6.configs.TalonFXConfiguration() {{
+            MotorOutput.Inverted = turningMotorReversed ? InvertedValue.Clockwise_Positive : InvertedValue.CounterClockwise_Positive;
+            Feedback.SensorToMechanismRatio = ModuleConstants.kTurningMotorGearRatio / (2.0 * Math.PI);
+        }});
+
         driveSim = driveMotor.getSimState();
         turnSim = turningMotor.getSimState();
 
-        TalonFXConfiguration driveConfig = new TalonFXConfiguration();
-        driveConfig.MotorOutput.Inverted = driveMotorReversed ? InvertedValue.Clockwise_Positive : InvertedValue.CounterClockwise_Positive;
-        driveMotor.getConfigurator().apply(driveConfig);
-
-        TalonFXConfiguration turningConfig = new TalonFXConfiguration();
-        turningConfig.MotorOutput.Inverted = turningMotorReversed ? InvertedValue.Clockwise_Positive : InvertedValue.CounterClockwise_Positive;
-        turningMotor.getConfigurator().apply(turningConfig);
-
-
-        //driveMotor.setInverted(driveMotorReversed);
-        //turningMotor.setInverted(turningMotorReversed);
-
-        //driveEncoder = driveMotor.getEncoder();
-        //turningEncoder = turningMotor.getEncoder();
-
-        turningConfig.Feedback.SensorToMechanismRatio = ModuleConstants.kTurningMotorGearRatio / (2.0 * Math.PI);
-        turningMotor.getConfigurator().apply(turningConfig);
-
-        //driveEncoder.setPositionConversionFactor(ModuleConstants.kDriveEncoderRot2Meter);
-        //driveEncoder.setVelocityConversionFactor(ModuleConstants.kDriveEncoderRPM2MeterPerSec);
-        //turningEncoder.setPositionConversionFactor(ModuleConstants.kTurningEncoderRot2Rad);
-        //turningEncoder.setVelocityConversionFactor(ModuleConstants.kTurningEncoderRPM2RadPerSec);
-
-        driveMotor.getConfigurator().refresh(driveConfig);
-        driveConfig.Feedback.SensorToMechanismRatio = ModuleConstants.kDriveMotorGearRatio / ModuleConstants.kWheelCircumferenceMeters;
-        driveMotor.getConfigurator().apply(driveConfig);
-
-        turningPidController = new PIDController(ModuleConstants.kPTurning, 0, 0);
-        turningPidController.enableContinuousInput(-Math.PI, Math.PI);
+        turningPid = new PIDController(ModuleConstants.kPTurning, 0.0, 0.0);
+        turningPid.enableContinuousInput(-Math.PI, Math.PI);
 
         resetEncoders();
     }
-    
 
-    public double getDriveDistanceMeters() {
-        return driveMotor.getPosition().getValueAsDouble();
-    }
-    
-    public Rotation2d getTurningRotation2d() {
-        return Rotation2d.fromRadians(getAbsoluteEncoderRad());
-    }    
-
-    public double getDrivePosition() {
-        //return driveMotor.getPosition().getValueAsDouble();
-        return MathUtil.angleModulus(driveMotor.getPosition().getValueAsDouble());
+    private static double wrapAngleRadians(double angle) {
+        while (angle >= Math.PI) angle -= 2.0 * Math.PI;
+        while (angle < -Math.PI) angle += 2.0 * Math.PI;
+        return angle;
     }
 
-    public double getTurningPosition() {
-        return MathUtil.angleModulus(turningMotor.getPosition().getValueAsDouble());
+    private double getTurningAngleRadFromIntegrated() {
+        double motorRotations = turningMotor.getPosition().getValueAsDouble();
+        return motorRotations * ModuleConstants.kTurningEncoderRot2Rad;
     }
 
-    public double getDriveVelocity() {
-        //return driveMotor.getVelocity().getValueAsDouble();
-        return MathUtil.angleModulus(driveMotor.getVelocity().getValueAsDouble());
+    private double getDriveDistanceMetersFromIntegrated() {
+        double motorRotations = driveMotor.getPosition().getValueAsDouble();
+        return motorRotations * ModuleConstants.kDriveEncoderRot2Meter;
     }
 
-    public double getTurningVelocity() {
-        //return turningMotor.getVelocity().getValueAsDouble();
-        return MathUtil.angleModulus(turningMotor.getVelocity().getValueAsDouble());
-
+    private double getDriveVelocityMetersPerSecondFromIntegrated() {
+        double motorRps = driveMotor.getVelocity().getValueAsDouble();
+        return motorRps * ModuleConstants.kDriveEncoderRot2Meter;
     }
 
     public double getAbsoluteEncoderRad() {
-    
-        if (Robot.isSimulation()) {
-            double mechAngle = turningMotor.getPosition().getValueAsDouble();
-            return MathUtil.angleModulus(mechAngle);
+        if (Robot.isSimulation() || absoluteEncoder == null) {
+            return wrapAngleRadians(getTurningAngleRadFromIntegrated());
+        } else {
+            double angle = absoluteEncoder.getVoltage() / RobotController.getVoltage5V() * 2.0 * Math.PI;
+            angle -= absoluteEncoderOffsetRad;
+            return wrapAngleRadians(absoluteEncoderReversed ? -angle : angle);
         }
-        
-        double angle = absoluteEncoder.getVoltage() / RobotController.getVoltage5V();
-        angle *= 2.0 * Math.PI;
-        angle -= absoluteEncoderOffsetRad;
-        return angle * (absoluteEncoderReversed ? -1.0 : 1.0);
     }
 
-    public void resetEncoders() { // sets encoder to absolute position
-        driveMotor.setControl(drivePosControl.withPosition(0.0));
-        turningMotor.setControl(turnPosControl.withPosition(getAbsoluteEncoderRad()));
+    public double getDriveDistanceMeters() {
+        return getDriveDistanceMetersFromIntegrated();
     }
-    
+
+    public double getDriveVelocityMetersPerSecond() {
+        return getDriveVelocityMetersPerSecondFromIntegrated();
+    }
+
+    public Rotation2d getTurningRotation2d() {
+        return new Rotation2d(getAbsoluteEncoderRad());
+    }
+
+    public double getTurningPositionMotorRotations() {
+        return turningMotor.getPosition().getValueAsDouble();
+    }
 
     public SwerveModuleState getState() {
-        return new SwerveModuleState(getDriveVelocity(), getTurningRotation2d());
-    }    
-
-    public void setDesiredState(SwerveModuleState desiredState) {
-        desiredState = SwerveModuleState.optimize(desiredState, getState().angle);
-
-        double percentOutput = desiredState.speedMetersPerSecond / DriveConstants.kPhysicalMaxSpeedMetersPerSecond;
-        driveMotor.set(percentOutput);
-    
-        // Use absolute encoder for angle feedback
-        double currentAngle = getAbsoluteEncoderRad();
-        double targetAngle = desiredState.angle.getRadians();
-        double turnOutput =
-                turningPidController.calculate(currentAngle, targetAngle);
-    
-        turningMotor.set(turnOutput);
+        return new SwerveModuleState(getDriveVelocityMetersPerSecond(), getTurningRotation2d());
     }
-    
+
+    public void resetEncoders() {
+        driveMotor.setControl(drivePosControl.withPosition(0.0));
+
+        double initTurnRad = getAbsoluteEncoderRad();
+        double initMotorRot = initTurnRad / ModuleConstants.kTurningEncoderRot2Rad;
+        turningMotor.setControl(turnPosControl.withPosition(initMotorRot));
+    }
 
     public void stop() {
-        driveMotor.set(0);
-        turningMotor.set(0);
+        driveMotor.set(0.0);
+    
+        double currentMotorRot = turningMotor.getPosition().getValueAsDouble();
+        turningMotor.setControl(turnPosControl.withPosition(currentMotorRot));
+    }
+
+    public void setDesiredState(SwerveModuleState desiredState) {
+        SwerveModuleState d = new SwerveModuleState(
+            Math.min(desiredState.speedMetersPerSecond, DriveConstants.kPhysicalMaxSpeedMetersPerSecond),
+            desiredState.angle);
+    
+        d = SwerveModuleState.optimize(d, getState().angle);
+    
+        double percentOutput = d.speedMetersPerSecond / DriveConstants.kPhysicalMaxSpeedMetersPerSecond;
+        driveMotor.set(percentOutput);
+    
+        
+        double currentAngle = getAbsoluteEncoderRad();
+        double targetAngle = wrapAngleRadians(d.angle.getRadians());
+        
+        final double ANGLE_DEADBAND_RAD = 0.03;
+        final double SPEED_DEADBAND = 0.02; 
+    
+        if (Math.abs(d.speedMetersPerSecond) < SPEED_DEADBAND && Math.abs(wrapAngleRadians(targetAngle - currentAngle)) < ANGLE_DEADBAND_RAD) {
+            
+            double holdMotorRot = turningMotor.getPosition().getValueAsDouble();
+            turningMotor.setControl(turnPosControl.withPosition(holdMotorRot));
+            
+            return;
+        }
+    
+        double targetMotorRot = targetAngle / ModuleConstants.kTurningEncoderRot2Rad;
+    
+        turningMotor.setControl(turnPosControl.withPosition(targetMotorRot));
     }
 
     public void simulationUpdate() {
-        double dt = 0.02;
-    
+        final double dt = 0.02;
+
+        // supply voltage
         driveSim.setSupplyVoltage(12.0);
         turnSim.setSupplyVoltage(12.0);
 
-        // convert command percent to wheel speed
-        double appliedDutyCycle = driveMotor.getDutyCycle().getValueAsDouble();
-        double wheelSpeed = appliedDutyCycle * DriveConstants.kPhysicalMaxSpeedMetersPerSecond;
+        // DRIVE SIMULATION:
+        // We read commanded duty cycle and convert to wheel speed (m/s)
+        double driveDuty = driveMotor.getDutyCycle().getValueAsDouble(); // -1..1
+        double wheelSpeed = driveDuty * DriveConstants.kPhysicalMaxSpeedMetersPerSecond; // m/s
 
-        // wheel speed --> motor rot/sec
-        double motorRPS = wheelSpeed / ModuleConstants.kWheelCircumferenceMeters * ModuleConstants.kDriveMotorGearRatio;
+        // wheelSpeed -> motor rotations per second (motorRPS)
+        // motorRPS = wheelRotationsPerSecond * motorPerWheelRatio
+        // wheelRotationsPerSecond = wheelSpeed / wheelCircumference
+        double wheelRps = wheelSpeed / ModuleConstants.kWheelCircumferenceMeters;
+        double motorRps = wheelRps / ModuleConstants.kDriveMotorGearRatio; // because kDriveMotorGearRatio = motorRotation -> wheelRotation factor in constants
+        // set simulation rotor velocity and advance position
+        driveSim.setRotorVelocity(motorRps);
+        driveSim.addRotorPosition(motorRps * dt);
 
-        // set simulation velocity
-        driveSim.setRotorVelocity(motorRPS);
-
-        driveSim.addRotorPosition(motorRPS * dt);
-
+        // TURNING SIMULATION:
         double turnDuty = turningMotor.getDutyCycle().getValueAsDouble();
-        double turnSpeedRad = turnDuty * Math.PI * 4;
-
-        //double newPos = turnSim.getRotorPosition() + turnSpeedRad * dt;
-
-        double turnRPS = turnSpeedRad / (2.0 * Math.PI);
-
-        turnSim.setRotorVelocity(turnRPS);
-        turnSim.addRotorPosition(turnRPS * dt);
-
+        // Choose a reasonable max turn speed (radians/sec). We make it relative to physical max angular speed.
+        double maxTurnRadPerSec = 2.0 * Math.PI; // 1 rotation per second (tune if needed)
+        double turnSpeedRadPerSec = turnDuty * maxTurnRadPerSec;
+        // convert rad/s to motor rotations per second:
+        double turnMotorRps = turnSpeedRadPerSec / (2.0 * Math.PI) / ModuleConstants.kTurningMotorGearRatio;
+        // update simulation
+        turnSim.setRotorVelocity(turnMotorRps);
+        turnSim.addRotorPosition(turnMotorRps * dt);
     }
-    
 }

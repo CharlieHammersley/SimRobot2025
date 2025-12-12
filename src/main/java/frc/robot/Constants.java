@@ -27,10 +27,16 @@ public final class Constants {
         public static final double kWheelBase = Units.inchesToMeters(25.5);
         // Distance between front and back wheels
         public static final SwerveDriveKinematics kDriveKinematics = new SwerveDriveKinematics(
-                new Translation2d(kWheelBase / 2, -kTrackWidth / 2),
-                new Translation2d(kWheelBase / 2, kTrackWidth / 2),
-                new Translation2d(-kWheelBase / 2, -kTrackWidth / 2),
-                new Translation2d(-kWheelBase / 2, kTrackWidth / 2));
+        // Front Left
+        new Translation2d(kWheelBase / 2.0,  kTrackWidth / 2.0),
+        // Front Right
+        new Translation2d(kWheelBase / 2.0, -kTrackWidth / 2.0),
+        // Back Left
+        new Translation2d(-kWheelBase / 2.0,  kTrackWidth / 2.0),
+        // Back Right
+        new Translation2d(-kWheelBase / 2.0, -kTrackWidth / 2.0));
+
+
 
         public static final int kFrontLeftDriveMotorPort = 8;
         public static final int kBackLeftDriveMotorPort = 2;
@@ -52,26 +58,28 @@ public final class Constants {
         public static final boolean kFrontRightDriveEncoderReversed = false;
         public static final boolean kBackRightDriveEncoderReversed = false;
 
-        public static final int kFrontLeftDriveAbsoluteEncoderPort = 0;
-        public static final int kBackLeftDriveAbsoluteEncoderPort = 2;
-        public static final int kFrontRightDriveAbsoluteEncoderPort = 1;
-        public static final int kBackRightDriveAbsoluteEncoderPort = 3;
+        // Turning (absolute) encoders — used by SwerveModule constructor as absolute encoder inputs
+        public static final int kFrontLeftTurningAbsoluteEncoderPort  = 0;
+        public static final int kFrontRightTurningAbsoluteEncoderPort = 1;
+        public static final int kBackLeftTurningAbsoluteEncoderPort   = 2;
+        public static final int kBackRightTurningAbsoluteEncoderPort  = 3;
 
-        public static final boolean kFrontLeftDriveAbsoluteEncoderReversed = false;
-        public static final boolean kBackLeftDriveAbsoluteEncoderReversed = false;
-        public static final boolean kFrontRightDriveAbsoluteEncoderReversed = false;
-        public static final boolean kBackRightDriveAbsoluteEncoderReversed = false;
+        public static final boolean kFrontLeftTurningAbsoluteEncoderReversed  = false;
+        public static final boolean kFrontRightTurningAbsoluteEncoderReversed = false;
+        public static final boolean kBackLeftTurningAbsoluteEncoderReversed   = false;
+        public static final boolean kBackRightTurningAbsoluteEncoderReversed  = false;
 
-        public static final double kFrontLeftDriveAbsoluteEncoderOffsetRad = -0.254;
-        public static final double kBackLeftDriveAbsoluteEncoderOffsetRad = -1.252;
-        public static final double kFrontRightDriveAbsoluteEncoderOffsetRad = -1.816;
-        public static final double kBackRightDriveAbsoluteEncoderOffsetRad = -4.811;
+        public static final double kFrontLeftTurningAbsoluteEncoderOffsetRad  = -0.254;
+        public static final double kFrontRightTurningAbsoluteEncoderOffsetRad = -1.816;
+        public static final double kBackLeftTurningAbsoluteEncoderOffsetRad   = -1.252;
+        public static final double kBackRightTurningAbsoluteEncoderOffsetRad  = -4.811;
+
 
         public static final double kPhysicalMaxSpeedMetersPerSecond = 5;
         public static final double kPhysicalMaxAngularSpeedRadiansPerSecond = 2 * 2 * Math.PI;
 
         public static final double kTeleDriveMaxSpeedMetersPerSecond = kPhysicalMaxSpeedMetersPerSecond / 4;
-        public static final double kTeleDriveMaxAngularSpeedRadiansPerSecond = //
+        public static final double kTeleDriveMaxAngularSpeedRadiansPerSecond =
                 kPhysicalMaxAngularSpeedRadiansPerSecond / 4;
         public static final double kTeleDriveMaxAccelerationUnitsPerSecond = 3;
         public static final double kTeleDriveMaxAngularAccelerationUnitsPerSecond = 3;
@@ -79,7 +87,7 @@ public final class Constants {
 
     public static final class AutoConstants {
         public static final double kMaxSpeedMetersPerSecond = DriveConstants.kPhysicalMaxSpeedMetersPerSecond / 4;
-        public static final double kMaxAngularSpeedRadiansPerSecond = //
+        public static final double kMaxAngularSpeedRadiansPerSecond =
                 DriveConstants.kPhysicalMaxAngularSpeedRadiansPerSecond / 10;
         public static final double kMaxAccelerationMetersPerSecondSquared = 3;
         public static final double kMaxAngularAccelerationRadiansPerSecondSquared = Math.PI / 4;
@@ -87,7 +95,7 @@ public final class Constants {
         public static final double kPYController = 1.5;
         public static final double kPThetaController = 3;
 
-        public static final TrapezoidProfile.Constraints kThetaControllerConstraints = //
+        public static final TrapezoidProfile.Constraints kThetaControllerConstraints =
                 new TrapezoidProfile.Constraints(
                         kMaxAngularSpeedRadiansPerSecond,
                         kMaxAngularAccelerationRadiansPerSecondSquared);
