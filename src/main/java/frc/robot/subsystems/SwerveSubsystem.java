@@ -14,46 +14,58 @@ import frc.robot.Constants.DriveConstants;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.BooleanPublisher;
+import edu.wpi.first.networktables.BooleanSubscriber;
+
 
 public class SwerveSubsystem extends SubsystemBase{
+
+    private boolean fieldRelative = false;
+
+    private final BooleanPublisher fieldRelPublisher =
+        NetworkTableInstance.getDefault().getBooleanTopic("/Swerve/FieldRelative").publish();
+
+    private final BooleanSubscriber fieldRelSubscriber =
+        NetworkTableInstance.getDefault().getBooleanTopic("/Swerve/FieldRelative").subscribe(fieldRelative);
 
     private final Field2d field = new Field2d();
 
     private final SwerveModule frontLeft = new SwerveModule(
-            DriveConstants.kFrontLeftDriveMotorPort, // drive motor port
-            DriveConstants.kFrontLeftTurningMotorPort, // turning motor port
-            DriveConstants.kFrontLeftDriveEncoderReversed, // drive encoder
-            DriveConstants.kFrontLeftTurningEncoderReversed, // turning encoder
-            DriveConstants.kFrontLeftTurningAbsoluteEncoderPort,
-            DriveConstants.kFrontLeftTurningAbsoluteEncoderOffsetRad,
-            DriveConstants.kFrontLeftTurningAbsoluteEncoderReversed);
+        DriveConstants.kFrontLeftDriveMotorPort,
+        DriveConstants.kFrontLeftTurningMotorPort,
+        DriveConstants.kFrontLeftDriveMotorReversed,
+        DriveConstants.kFrontLeftTurningMotorReversed,
+        DriveConstants.kFrontLeftTurningAbsoluteEncoderPort,
+        DriveConstants.kFrontLeftTurningAbsoluteEncoderOffsetRad,
+        DriveConstants.kFrontLeftTurningAbsoluteEncoderReversed);
 
     private final SwerveModule frontRight = new SwerveModule(
-            DriveConstants.kFrontRightDriveMotorPort,
-            DriveConstants.kFrontRightTurningMotorPort,
-            DriveConstants.kFrontRightDriveEncoderReversed,
-            DriveConstants.kFrontRightTurningEncoderReversed,
-            DriveConstants.kFrontRightTurningAbsoluteEncoderPort,
-            DriveConstants.kFrontRightTurningAbsoluteEncoderOffsetRad,
-            DriveConstants.kFrontRightTurningAbsoluteEncoderReversed);
+        DriveConstants.kFrontRightDriveMotorPort,
+        DriveConstants.kFrontRightTurningMotorPort,
+        DriveConstants.kFrontRightDriveMotorReversed,
+        DriveConstants.kFrontRightTurningMotorReversed,
+        DriveConstants.kFrontRightTurningAbsoluteEncoderPort,
+        DriveConstants.kFrontRightTurningAbsoluteEncoderOffsetRad,
+        DriveConstants.kFrontRightTurningAbsoluteEncoderReversed);
 
     private final SwerveModule backLeft = new SwerveModule(
-            DriveConstants.kBackLeftDriveMotorPort,
-            DriveConstants.kBackLeftTurningMotorPort,
-            DriveConstants.kBackLeftDriveEncoderReversed,
-            DriveConstants.kBackLeftTurningEncoderReversed,
-            DriveConstants.kBackLeftTurningAbsoluteEncoderPort,
-            DriveConstants.kBackLeftTurningAbsoluteEncoderOffsetRad,
-            DriveConstants.kBackLeftTurningAbsoluteEncoderReversed);
+        DriveConstants.kBackLeftDriveMotorPort,
+        DriveConstants.kBackLeftTurningMotorPort,
+        DriveConstants.kBackLeftDriveMotorReversed,
+        DriveConstants.kBackLeftTurningMotorReversed,
+        DriveConstants.kBackLeftTurningAbsoluteEncoderPort,
+        DriveConstants.kBackLeftTurningAbsoluteEncoderOffsetRad,
+        DriveConstants.kBackLeftTurningAbsoluteEncoderReversed);
 
     private final SwerveModule backRight = new SwerveModule(
-            DriveConstants.kBackRightDriveMotorPort,
-            DriveConstants.kBackRightTurningMotorPort,
-            DriveConstants.kBackRightDriveEncoderReversed,
-            DriveConstants.kBackRightTurningEncoderReversed,
-            DriveConstants.kBackRightTurningAbsoluteEncoderPort,
-            DriveConstants.kBackRightTurningAbsoluteEncoderOffsetRad,
-            DriveConstants.kBackRightTurningAbsoluteEncoderReversed);;
+        DriveConstants.kBackRightDriveMotorPort,
+        DriveConstants.kBackRightTurningMotorPort,
+        DriveConstants.kBackRightDriveMotorReversed,
+        DriveConstants.kBackRightTurningMotorReversed,
+        DriveConstants.kBackRightTurningAbsoluteEncoderPort,
+        DriveConstants.kBackRightTurningAbsoluteEncoderOffsetRad,
+        DriveConstants.kBackRightTurningAbsoluteEncoderReversed);
 
     private final Pigeon2 gyro = new Pigeon2(DriveConstants.kPigeonCanID); // navx gyro
 
@@ -122,12 +134,12 @@ public class SwerveSubsystem extends SubsystemBase{
         gyro.reset();
     }
 
-    public double getHeading() {
-        return gyro.getYaw().getValueAsDouble();
-    }
-
     public Rotation2d getRotation2d() {
-        return Rotation2d.fromDegrees(getHeading());
+        return Rotation2d.fromDegrees(-gyro.getYaw().getValueAsDouble());
+    }
+    
+    public double getHeading() {
+        return getRotation2d().getDegrees();
     }
 
     public void resetOdometry(Pose2d pose) {
@@ -142,6 +154,12 @@ public class SwerveSubsystem extends SubsystemBase{
 
     @Override
     public void periodic() {
+        fieldRelative = fieldRelSubscriber.get();
+        fieldRelPublisher.set(fieldRelative);
+
+        odometry.update(getRotation2d(), getModulePositions());
+        field.setRobotPose(odometry.getPoseMeters());
+        
         odometry.update(getRotation2d(), getModulePositions());
         field.setRobotPose(odometry.getPoseMeters());
 

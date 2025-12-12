@@ -38,7 +38,7 @@ public class SwerveModule {
                         int absoluteEncoderPort,
                         double absoluteEncoderOffset,
                         boolean absoluteEncoderReversed) {
-
+                        
         this.absoluteEncoderOffsetRad = absoluteEncoderOffset;
         this.absoluteEncoderReversed = absoluteEncoderReversed;
         this.absoluteEncoder = (absoluteEncoderPort >= 0) ? new AnalogInput(absoluteEncoderPort) : null;
@@ -57,7 +57,7 @@ public class SwerveModule {
         driveSim = driveMotor.getSimState();
         turnSim = turningMotor.getSimState();
 
-        turningPid = new PIDController(ModuleConstants.kPTurning, 0.0, 0.0);
+        turningPid = new PIDController(ModuleConstants.kPTurning, ModuleConstants.kITurning, ModuleConstants.kDTurning);
         turningPid.enableContinuousInput(-Math.PI, Math.PI);
 
         resetEncoders();
@@ -143,8 +143,8 @@ public class SwerveModule {
         double currentAngle = getAbsoluteEncoderRad();
         double targetAngle = wrapAngleRadians(d.angle.getRadians());
         
-        final double ANGLE_DEADBAND_RAD = 0.03;
-        final double SPEED_DEADBAND = 0.02; 
+        final double ANGLE_DEADBAND_RAD = 0.005;
+        final double SPEED_DEADBAND = 0.005; 
     
         if (Math.abs(d.speedMetersPerSecond) < SPEED_DEADBAND && Math.abs(wrapAngleRadians(targetAngle - currentAngle)) < ANGLE_DEADBAND_RAD) {
             
@@ -162,32 +162,22 @@ public class SwerveModule {
     public void simulationUpdate() {
         final double dt = 0.02;
 
-        // supply voltage
         driveSim.setSupplyVoltage(12.0);
         turnSim.setSupplyVoltage(12.0);
 
-        // DRIVE SIMULATION:
-        // We read commanded duty cycle and convert to wheel speed (m/s)
-        double driveDuty = driveMotor.getDutyCycle().getValueAsDouble(); // -1..1
-        double wheelSpeed = driveDuty * DriveConstants.kPhysicalMaxSpeedMetersPerSecond; // m/s
+        double driveDuty = driveMotor.getDutyCycle().getValueAsDouble();
+        double wheelSpeed = driveDuty * DriveConstants.kPhysicalMaxSpeedMetersPerSecond;
 
-        // wheelSpeed -> motor rotations per second (motorRPS)
-        // motorRPS = wheelRotationsPerSecond * motorPerWheelRatio
-        // wheelRotationsPerSecond = wheelSpeed / wheelCircumference
         double wheelRps = wheelSpeed / ModuleConstants.kWheelCircumferenceMeters;
-        double motorRps = wheelRps / ModuleConstants.kDriveMotorGearRatio; // because kDriveMotorGearRatio = motorRotation -> wheelRotation factor in constants
-        // set simulation rotor velocity and advance position
+        double motorRps = wheelRps / ModuleConstants.kDriveMotorGearRatio;
+
         driveSim.setRotorVelocity(motorRps);
         driveSim.addRotorPosition(motorRps * dt);
 
-        // TURNING SIMULATION:
         double turnDuty = turningMotor.getDutyCycle().getValueAsDouble();
-        // Choose a reasonable max turn speed (radians/sec). We make it relative to physical max angular speed.
-        double maxTurnRadPerSec = 2.0 * Math.PI; // 1 rotation per second (tune if needed)
+        double maxTurnRadPerSec = 2.0 * Math.PI;
         double turnSpeedRadPerSec = turnDuty * maxTurnRadPerSec;
-        // convert rad/s to motor rotations per second:
         double turnMotorRps = turnSpeedRadPerSec / (2.0 * Math.PI) / ModuleConstants.kTurningMotorGearRatio;
-        // update simulation
         turnSim.setRotorVelocity(turnMotorRps);
         turnSim.addRotorPosition(turnMotorRps * dt);
     }

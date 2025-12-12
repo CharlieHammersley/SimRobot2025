@@ -20,6 +20,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 //import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 //import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 //import frc.robot.commands.SwerveJoystickCmd;
@@ -39,8 +40,11 @@ public class RobotContainer {
   configureBindings();
 
   swerveSubsystem.setDefaultCommand(
-    new RunCommand(() -> {
-      
+new RunCommand(() -> {
+      SmartDashboard.putNumber("X Raw", driverJoystick.getRawAxis(0));
+      SmartDashboard.putNumber("Y Raw", driverJoystick.getRawAxis(1));
+      SmartDashboard.putNumber("Rot Raw", driverJoystick.getRawAxis(2));
+
       double xInput = applyDeadband(-driverJoystick.getRawAxis(1), 0.05);
       double yInput = applyDeadband(-driverJoystick.getRawAxis(0), 0.05);
       double rotInput = applyDeadband(-driverJoystick.getRawAxis(2), 0.05);

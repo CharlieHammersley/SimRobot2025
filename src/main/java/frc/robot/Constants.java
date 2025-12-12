@@ -16,7 +16,9 @@ public final class Constants {
         public static final double kTurningEncoderRot2Rad = kTurningMotorGearRatio * 2 * Math.PI;
         public static final double kDriveEncoderRPM2MeterPerSec = kDriveEncoderRot2Meter / 60;
         public static final double kTurningEncoderRPM2RadPerSec = kTurningEncoderRot2Rad / 60;
-        public static final double kPTurning = 0.5;
+        public static final double kPTurning = 6.0;
+        public static final double kITurning = 0.0;
+        public static final double kDTurning = 0.1;   // small damping
     }
 
     public static final class DriveConstants {
@@ -58,16 +60,25 @@ public final class Constants {
         public static final boolean kFrontRightDriveEncoderReversed = false;
         public static final boolean kBackRightDriveEncoderReversed = false;
 
-        // Turning (absolute) encoders — used by SwerveModule constructor as absolute encoder inputs
-        public static final int kFrontLeftTurningAbsoluteEncoderPort  = 0;
-        public static final int kFrontRightTurningAbsoluteEncoderPort = 1;
-        public static final int kBackLeftTurningAbsoluteEncoderPort   = 2;
-        public static final int kBackRightTurningAbsoluteEncoderPort  = 3;
-
         public static final boolean kFrontLeftTurningAbsoluteEncoderReversed  = false;
         public static final boolean kFrontRightTurningAbsoluteEncoderReversed = false;
         public static final boolean kBackLeftTurningAbsoluteEncoderReversed   = false;
         public static final boolean kBackRightTurningAbsoluteEncoderReversed  = false;
+
+        public static final boolean kFrontLeftDriveMotorReversed  = false;
+        public static final boolean kFrontRightDriveMotorReversed = false;
+        public static final boolean kBackLeftDriveMotorReversed   = false;
+        public static final boolean kBackRightDriveMotorReversed  = false;
+
+        public static final boolean kFrontLeftTurningMotorReversed  = false;
+        public static final boolean kFrontRightTurningMotorReversed = false;
+        public static final boolean kBackLeftTurningMotorReversed   = false;
+        public static final boolean kBackRightTurningMotorReversed  = false;
+
+        public static final int kFrontLeftTurningAbsoluteEncoderPort  = 0;
+        public static final int kFrontRightTurningAbsoluteEncoderPort = 1;
+        public static final int kBackLeftTurningAbsoluteEncoderPort   = 2;
+        public static final int kBackRightTurningAbsoluteEncoderPort  = 3;
 
         public static final double kFrontLeftTurningAbsoluteEncoderOffsetRad  = -0.254;
         public static final double kFrontRightTurningAbsoluteEncoderOffsetRad = -1.816;
