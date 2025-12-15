@@ -67,7 +67,7 @@ public class SwerveSubsystem extends SubsystemBase{
         DriveConstants.kBackRightTurningAbsoluteEncoderOffsetRad,
         DriveConstants.kBackRightTurningAbsoluteEncoderReversed);
 
-    private final Pigeon2 gyro = new Pigeon2(DriveConstants.kPigeonCanID); // navx gyro
+    private final Pigeon2 gyro = new Pigeon2(DriveConstants.kPigeonCanID); // navx
 
     private final SwerveDriveOdometry odometry = new SwerveDriveOdometry(
         DriveConstants.kDriveKinematics,
@@ -162,6 +162,7 @@ public class SwerveSubsystem extends SubsystemBase{
         
         odometry.update(getRotation2d(), getModulePositions());
         field.setRobotPose(odometry.getPoseMeters());
+        SmartDashboard.putString("Robot Coordinates", getPose().getTranslation().toString());
 
         SmartDashboard.putNumber("Robot Velocity (m/s)",DriveConstants.kDriveKinematics.toChassisSpeeds(
             frontLeft.getState(),
