@@ -164,6 +164,8 @@ public class SwerveSubsystem extends SubsystemBase{
         field.setRobotPose(odometry.getPoseMeters());
         SmartDashboard.putString("Robot Coordinates", getPose().getTranslation().toString());
 
+        SmartDashboard.putNumber("Robot Heading", getRotation2d());
+
         SmartDashboard.putNumber("Robot Velocity (m/s)",DriveConstants.kDriveKinematics.toChassisSpeeds(
             frontLeft.getState(),
             frontRight.getState(),
